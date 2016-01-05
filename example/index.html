@@ -1,0 +1,54 @@
+<html>
+<head>
+   <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+	<h2>Ajax pager example</h2>
+	<table id="example">
+	<THEAD>	
+	<tr>
+		<th>Name</th>
+		<th>Value 1</th>
+		<th>Value 2</th>		
+	</tr>
+	<THEAD>
+	<TBODY>
+	
+	<TBODY>
+	</table>
+	<div id="navbar"></div>
+	
+	
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+<script type="text/javascript" src="../jquery.paging.js"></script>
+    <script type="text/javascript">
+		function fillTable(data){
+			var html = [];
+			for(var i=0; i<data.length; i++){
+				html.push("<tr>");
+				html.push("<td>"+data[i].name+"</td>");
+				html.push("<td>"+data[i].value1+"</td>");
+				html.push("<td>"+data[i].value2+"</td>");				
+				html.push("</tr>");
+			}
+			$("#example TBODY").html(html.join(""));
+		}
+		
+        jQuery(document).ready(function() {
+            $("#navbar").ajaxPaging({
+						items : 24,
+						itemsPerPage : 5,
+						url : "data.json",
+						callbackParams : {
+							projectId : 1
+						},
+						initialPage : 0,
+						fillFirstPage : true,
+						callback : fillTable,
+			});
+			
+			
+        });
+    </script>
+</body>
+</html>
