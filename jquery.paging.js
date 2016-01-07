@@ -6,6 +6,7 @@
  * Usage: $("#someDivId").ajaxPaging({settings...}); look example for details
  *
  * Settings:
+ * data - if not null, local array can be used, and no ajax requests to server
  * items - total items count
  * itemsPerPage - items per page ))
  * url - used to retrieve data
@@ -24,7 +25,8 @@
 			 init: function(options) {
 				 
 				// Establish our default settings
-			        var settings = $.extend({            
+			        var settings = $.extend({  
+						data         : null,
 			            items		 : 100,
 			            itemsPerPage : 10,
 			        	url          : null,
@@ -36,6 +38,9 @@
 			        }, options);
 			        
 			        this.data("settings", settings);
+					
+					if(settings.data != null)
+						settings.items = settings.data.length;
 			        
 			        if(settings.items <= settings.itemsPerPage)
 			        	this.hide();
@@ -55,6 +60,7 @@
 			        
 			        this.on("click", ".next-page", function(){
 			    		var page = parseInt(navBar.attr("page")) + 1;
+						var settings = navBar.data("settings");
 			    		navBar.attr("page", page);    		
 			    		ul.find("li.active").removeClass("active").next().addClass("active");    		
 			    		
@@ -62,37 +68,51 @@
 			    			ul.find("li:first").removeClass("disabled");
 			    		if(page>=settings.items/settings.itemsPerPage)
 			    			ul.find("li:last").addClass("disabled");
-			    		
-			    		var settings = navBar.data("settings");
+			    					    		
 			    		var params = $.extend({page: (page-1)}, settings.callbackParams);			    		
 			    		
-			    		$.getJSON(settings.url, params, function(data){
-			    			if ( $.isFunction( settings.callback ) ) {
-			    		        settings.callback.call( this, data );
-			    		    }
-			    		});
+						if(settings.data){
+							console.log("page: "+page);	
+							if ( $.isFunction( settings.callback ) ) {
+									var startIndex = (page-1)*settings.itemsPerPage;
+									settings.callback.call( this, settings.data.slice(startIndex, startIndex + settings.itemsPerPage));
+								}
+						} else {
+							$.getJSON(settings.url, params, function(data){
+								if ( $.isFunction( settings.callback ) ) {
+									settings.callback.call( this, data );
+								}
+							});
+						}
 			    		
 			    		return false;
 			    	});
 			        
 			        this.on("click", ".previous-page", function(){
 			    		var page = parseInt(navBar.attr("page")) - 1;
-			    		navBar.attr("page", page); 
+			    		var settings = navBar.data("settings");
+						navBar.attr("page", page); 
 			    		ul.find("li.active").removeClass("active").prev().addClass("active");
 			    		
 			    		if(page==1)
 			    			ul.find("li:first").addClass("disabled");
 			    		if(page<settings.items/settings.itemsPerPage)
 			    			ul.find("li:last").removeClass("disabled");
-			    					    		
-			    		var settings = navBar.data("settings");
+			    		
 			    		params = $.extend(params, navBar.data("callbackParams"));			    		
 			    		
-			    		$.getJSON(settings.url, params, function(data){
-			    			if ( $.isFunction( settings.callback ) ) {
-			    		        settings.callback.call( this, data );
-			    		    }
-			    		});
+						if(settings.data){
+							console.log("page: "+page);	
+							if ( $.isFunction( settings.callback ) ) {
+									settings.callback.call( this, settings.data.slice(0, settings.itemsPerPage));
+								}
+						} else {
+							$.getJSON(settings.url, params, function(data){
+								if ( $.isFunction( settings.callback ) ) {
+									settings.callback.call( this, data );
+								}
+							});
+						}
 			    		
 			    		return false;
 			    	});	
@@ -116,13 +136,21 @@
 			    		else
 			    			ul.find("li:last").addClass("disabled");
 			    					    		
-			    		var params = $.extend({page: (page-1)}, settings.callbackParams);			    		
-			    		
-			    		$.getJSON(settings.url, params, function(data){
-			    			if ( $.isFunction( settings.callback ) ) {
-			    		        settings.callback.call( this, data );
-			    		    }
-			    		});
+			    		var params = $.extend({page: (page-1)}, settings.callbackParams);	
+
+						if(settings.data){
+							console.log("page: "+page+"; start: "+(page-1)*settings.itemsPerPage + ";");							
+							if ( $.isFunction( settings.callback ) ) {
+									var startIndex = (page-1)*settings.itemsPerPage;
+									settings.callback.call( this, settings.data.slice(startIndex, startIndex + settings.itemsPerPage));
+								}
+						} else {			    		
+							$.getJSON(settings.url, params, function(data){
+								if ( $.isFunction( settings.callback ) ) {
+									settings.callback.call( this, data );
+								}
+							});
+						}
 			        	
 			        	return false;
 			        });
@@ -130,11 +158,18 @@
 			        if(settings.fillFirstPage == true){
 			        	var params = $.extend({page: settings.initialPage}, settings.callbackParams);
 			        	params = $.extend(params, navBar.data("callbackParams"));
-			        	$.getJSON(settings.url, params, function(data){		
-			        		if ( $.isFunction( settings.callback ) ) {        			
-			    		        settings.callback.call( this, data );
-			    		    }
-			        	});
+						if(settings.data){
+							console.log("page: fill first page");
+							if ( $.isFunction( settings.callback ) ) {
+									settings.callback.call( this, settings.data.slice(settings.initialPage, settings.initialPage + settings.itemsPerPage));
+								}
+						} else {
+							$.getJSON(settings.url, params, function(data){		
+								if ( $.isFunction( settings.callback ) ) {        			
+									settings.callback.call( this, data );
+								}
+							});
+						}	
 			        }   	
 			 },
 			 
@@ -150,11 +185,17 @@
 					 this.data("settings", settings);
 					 var params = $.extend({page: 0}, settings.callbackParams);
 			        	params = $.extend(params, urlParams);
-			        	$.getJSON(settings.url, params, function(data){		
-			        		if ( $.isFunction( settings.callback ) ) {        			
-			    		        settings.callback.call( this, data );
-			    		    }
-			        	});
+						if(settings.data){
+							if ( $.isFunction( settings.callback ) ) {
+									settings.callback.call( this, settings.data.slice(settings.initialPage, settings.initialPage + settings.itemsPerPage));
+								}
+						} else {
+							$.getJSON(settings.url, params, function(data){		
+								if ( $.isFunction( settings.callback ) ) {        			
+									settings.callback.call( this, data );
+								}
+							});
+						}
 				 }				 
 			 }
 	 };
